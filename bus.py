@@ -1,25 +1,21 @@
 #from selenium import webdriver
 from pyquery import PyQuery as pq
 import re
-import requests as req
-#import urllib.request
-#from urllib.request import Request, urlopen
+import requests
 
 def on_start():
 	stop = input("Enter your bus stop: ")
 	url = "https://ltp.umich.edu/transit/BB.php"
-	resp = req.get(url)
+	resp = requests.get(url)
 	doc = pq(resp.text)
 	for item in doc.find('.main table').eq(1).find('tr').items():
-		if item.find("td").eq(1).text() == stop_name:
+		if item.find("td").eq(1).text() == stop:
 			url = item.find("a").attr("href")
 			break
 	
-	req = Request(url, headers={'User-Agent': 'Mizilla/5.0'})
-	html = urlopen(req).read().decode('utf-8')
-	doc = pq(urlopen(req).read().decode('utf-8'))
-	for each in doc.find(".r2").items():
-		print(each)
+	doc = pq(requests.get(url).text)
+	# for each in doc.find(".r2").items():
+	# 	print(each)
 	print(doc.find(".r2").eq(0).find('td').eq(1).text())
 
 on_start()
