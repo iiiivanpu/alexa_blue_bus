@@ -1,7 +1,8 @@
 #from selenium import webdriver
 from pyquery import PyQuery as pq
-import re
+#import re
 import requests
+import json
 
 def on_start():
 	stop = input("Enter your bus stop: ")
@@ -10,13 +11,19 @@ def on_start():
 	doc = pq(resp.text)
 	for item in doc.find('.main table').eq(1).find('tr').items():
 		if item.find("td").eq(1).text() == stop:
+			print(stop)
 			url = item.find("a").attr("href")
 			break
-	
+	stop = "+".join(stop.split())
+	location = '1770+Broadway+Street'
+	print(stop)
 	doc = pq(requests.get(url).text)
-	# for each in doc.find(".r2").items():
-	# 	print(each)
 	print(doc.find(".r2").eq(0).find('td').eq(1).text())
+	url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins='+ location + '&destinations='
+	url += stop + '&mode=walking&key=AIzaSyBRJAYtJKPN0oRlWSz0dYOtB_OBEfcXi8I'
+	print(url)
+	data = requests.get(url).json()
+	print(data['rows'][0]['elements'][0]['duration']['value'])
 
 on_start()
 
