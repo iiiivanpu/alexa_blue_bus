@@ -5,20 +5,30 @@ import urllib.request
 from urllib.request import Request, urlopen
 
 def on_start():
-    stop = input("Enter your bus stop: ") 
-	url = 'https://ltp.umich.edu/transit/BB.php'
-    stop_num = {
-        
+	stop = input("Enter your bus stop: ")
+	stop_num = {
+        'Baits I' : '411',
+		'Baits II Inbound' : '409',
+		'Bursley Hall Inbound' : '407',
+		'Pierpont Commons, Murfin Inbound' : '551',
+		'Fuller Rd at Lot NC-78, Mitchell Field' : '450',
+		'Glen/Catherine Inbound' : '310',
+		'Rackham Bldg' : '211',
+		'Central Campus Transit Center: Chemistry' : '250',
+		'Stockwell Hall Outbound' : '301',
+		'Cardiovascular Center' : '303',
+		'Zina Pitcher' : '306',
+		'Glen/Catherine Outbound' : '309',
+		'Fuller Rd at Mitchell Field, Lot M-75' : '350',
+		'Pierpont Commons, Murfin Outbound' : '550',
+		'Bursley Hall Outbound' : '408',
+		'Baits II Outbound' : '410',
+		'Baits I' : '411'
     }
-	url += course_dept + '&catalog=' + course_num
+	url = 'http://ltp.umich.edu/stops/?s=N' + stop_num[stop]
 	response = urllib.request.urlopen(url)
 	html = response.read().decode('utf-8')
-	general_page(html)
-	quit = False
-	while quit == False:
-		command = input('Enter q to quit: ')
-		if command == 'q' or command == 'Q':
-			quit = True
+	print(html)
     
 
 def general_page(html):
