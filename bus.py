@@ -1,6 +1,9 @@
 #from selenium import webdriver
 from pyquery import PyQuery as pq
-#import re
+from flask_ask import Ask, context
+from datetime import datetime
+from datetime import timedelta  
+import re
 import requests
 import json
 
@@ -15,36 +18,42 @@ def on_start():
 			url = item.find("a").attr("href")
 			break
 	stop = "+".join(stop.split())
-	location = '1770+Broadway+Street'
-	print(stop)
+	#location = '1770+Broadway+Street'
+	location = '+'.join(get_alexa_location().split())
 	doc = pq(requests.get(url).text)
-	print(doc.find(".r2").eq(0).find('td').eq(1).text())
 	url = 'https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins='+ location + '&destinations='
 	url += stop + '&mode=walking&key=AIzaSyBRJAYtJKPN0oRlWSz0dYOtB_OBEfcXi8I'
 	print(url)
 	data = requests.get(url).json()
-	print(data['rows'][0]['elements'][0]['duration']['value'])
+	
+	travel_time = round(data['rows'][0]['elements'][0]['duration']['value']/60)
+	
+	next_time = re.search('([0-9]*):([0-9]*) ([ap]).m', doc.find(".r2").eq(0).find('td').eq(1).text())
+	hour = int(next_time.group(1)) if next_time.group(3) == 'a' else int(next_time.group(1)) + 12
+	minutes = int(next_time.group(2)) + travel_time
+	
+	if datetime.now().hour*60 + datetime.now().minute + travel_time < hour * 60 + minutes:
+		print("Can catch")
+		print(travel_time)
+		print([hour, minutes])
+	else:
+		print("Can't catch")
+		second_bus = re.search('([0-9]*):([0-9]*) ([ap]).m', doc.find(".r2").eq(0).find('td').eq(2).text())
+		print(second_bus.group(0), second_bus.group(1))
+	
+
+def get_alexa_location():
+	return "1770 Broadway Street"
+	URL =  "https://api.amazonalexa.com/v1/devices/{}/settings" \
+			"/address".format(context.System.device.deviceId)
+	TOKEN =  context.System.user.permissions.consentToken
+	HEADER = {'Accept': 'application/json',
+				'Authorization': 'Bearer {}'.format(TOKEN)}
+	r = requests.get(URL, headers=HEADER)
+	
+	if r.status_code == 200:
+		return(r.json()["addressLine1"])
+	else:
+		return "Invalid request"
 
 on_start()
-
-# stop_num = {
-    #     'Baits I' : '411',
-	# 	'Baits II Inbound' : '409',
-	# 	'Bursley Hall Inbound' : '407',
-	# 	'Pierpont Commons, Murfin Inbound' : '551',
-	# 	'Fuller Rd at Lot NC-78, Mitchell Field' : '450',
-	# 	'Glen/Catherine Inbound' : '310',
-	# 	'Rackham Bldg' : '211',
-	# 	'Central Campus Transit Center: Chemistry' : '250',
-	# 	'Stockwell Hall Outbound' : '301',
-	# 	'Cardiovascular Center' : '303',
-	# 	'Zina Pitcher' : '306',
-	# 	'Glen/Catherine Outbound' : '309',
-	# 	'Fuller Rd at Mitchell Field, Lot M-75' : '350',
-	# 	'Pierpont Commons, Murfin Outbound' : '550',
-	# 	'Bursley Hall Outbound' : '408',
-	# 	'Baits II Outbound' : '410',
-	# 	'Baits I' : '411'
-    # }
-	# url = 'http://ltp.umich.edu/stops/?s=N' + stop_num[stop] 
-	# print(url)
