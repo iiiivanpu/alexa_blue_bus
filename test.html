@@ -1,0 +1,353 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes" />
+<title></title>
+<link media="Screen" href="styles.css" type="text/css" rel="stylesheet" />
+<link media="handheld, only screen and (max-width: 480px), only screen and (max-device-width: 480px)" href="mobile.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript">
+window.onload=function() {
+        var stopcode = "N306";
+        //alert(stopcode);
+        if(stopcode == "E604" || stopcode == "E603") {
+                alert("To arrange for a pick-up at this location, please phone UM Transit Services 734.936.6641.");
+        }
+};
+</script>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 80%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+          table th {
+                  font-size: 18px;
+          }
+          .info-window a {
+                color: #427fed;
+                text-decoration: none;
+          }
+          .info-window-table {
+                margin-top: 5px;
+                border: 0px;
+                font-size: 10pt;
+                text-align: center;
+                border-collapse: separate;
+        border-spacing: .2em .2em;
+                margin-bottom: 5px;
+          }
+
+          .info-window-table-route-name {
+                  width: 37px;
+          }
+          .info-window-table-times {
+                  /*background-color: #fff;*/
+                  padding: 0px 4px 0px 4px;
+          }
+          .info-window-icon {
+                float: left;
+                padding: 0 5px 5px 7px;
+          }
+          .info-window-name {
+                width: 250px; /* Sets the width of the infoWindow */
+                color: #005596;
+          }
+
+
+          .routes-table tr:nth-child(even) {
+                background-color: #b3d9ff;
+          }
+
+          .routes-table tr:nth-child(odd) {
+                background-color: #cce6ff;
+          }
+
+          .black {
+                  color: #000;
+          }
+          .white {
+                  color: #fff;
+          }
+    </style>
+</head>
+<body>
+<div>
+<table summary="Route Headers">
+<thead>
+        <tr>
+                <th colspan="2"></th>
+                <th style="text-align: right" colspan="2"></th>
+        </tr>
+</thead>
+<tbody>
+        <tr>
+                <td  colspan="3">February 9th, 2019</td>
+                <td  style="text-align: right" colspan="3">10:46 AM</td>
+        </tr>
+        <tr>
+                <td colspan="4" class="tRow">Upcoming Scheduled Arrivals (<a href="http://google.com/transit">Google Transit</a>)</td>
+        </tr>
+</tbody>
+</table>
+<table summary="Routes" class="routes-table">
+<tbody>
+
+</tbody>
+</table>
+
+</div>
+<div id="map"></div>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQTctxPDmQ0yT2nqkzP_U2IqXULTwds14&callback=initMap&libraries=places">
+    </script>
+    <script>
+      // This example creates circles on the map, representing populations in North
+      // America.
+
+                var infoWindowActive;
+                var lineSymbolCircle = null;
+                var polylines = []; // array in the global scope
+                var stop_id = 'N306';
+
+
+      function initMap() {
+        // Create the map.
+                var location = {lat: , lng: };
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 17,
+          center: location,
+          mapTypeId: 'roadmap'
+        });
+
+                var transitLayer = new google.maps.TransitLayer();
+        transitLayer.setMap(map);
+
+                //var trafficLayer = new google.maps.TrafficLayer();
+                //trafficLayer.setMap(map);
+
+                // Define a symbol using a predefined path (an arrow)
+                // supplied by the Google Maps JavaScript API.
+                lineSymbolCircle = {
+                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                        scale: 4,
+                        strokeColor: '#333'
+                };
+
+                google.maps.event.addListener(map,'click',function(event) {
+                        location = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+                        showInfoWindow(map, location);
+                });
+
+
+
+                showInfoWindow(map, location);
+        }
+
+        function showStopRoutes(map, stop_id) {
+                // Get the shapes of the routes that go through this stop
+                $.getJSON('getRoutesForStop.php', { s : stop_id }, function (data) {
+                        var path = [];
+                        var ttt = [ {lat: 22.291, lng: 153.027}, {lat: 18.291, lng: 153.027} ];
+                        var strokeColor = '';
+                        var line = null;
+
+
+                        for (var i=0 ; i< polylines.length ; i++) {
+                                polylines[i].setMap(null);
+                        }
+                        polylines = [];
+
+                        for (route_id in data) {
+                                for (shape_id in data[route_id]) {
+                                        path = [];
+                                        for (i in data[route_id][shape_id]) {
+                                                path.push( { lat: data[route_id][shape_id][i]['lat'], lng: data[route_id][shape_id][i]['lon'] } );
+                                                strokeColor = data[route_id][shape_id][i]['color'];
+                                        }
+                                        console.log( route_id + "-" +shape_id);
+
+                                        line = null;
+                                        // Create the polyline and add the symbol via the 'icons' property.
+                                        line = new google.maps.Polyline({
+                                          path: path,
+                                          strokeOpacity: 0.5,
+                                          strokeColor : '#' + strokeColor,
+                                          strokeWeight: 6,
+                                          icons: [],
+                                          map: map
+                                        });
+
+                                        polylines.push(line); // Keep track of all Polylines that are created.
+
+                                        // attach event listener to each segment...
+                                        google.maps.event.addListener(line, 'mouseover', function(event) {
+                                                this.setOptions({
+                                                strokeOpacity: 1,
+                                                strokeWeight: 8,
+                                                icons: [{
+                                                        icon: lineSymbolCircle,
+                                                        offset: '0%'
+                                                        }],
+                                                });
+                                                animateIcon(this);
+                                        });
+
+                                        google.maps.event.addListener(line, 'mouseout', function(event) {
+                                                this.setOptions({
+                                                strokeOpacity: 0.5,
+                                                strokeWeight: 6,
+                                                icons: [],
+                                                });
+                                                clearAnimateIcon();
+                                        });
+                                }
+                        }
+
+                });
+
+
+
+        }
+
+
+        /* these two functions control the animation of an icon along the path of the bus route. */
+        var lineAnimateCount = 0;
+        var lineAnimateActive = false;
+
+        function clearAnimateIcon() {
+                lineAnimateCount = 0;
+                lineAnimateActive = false;
+                clearTimeout();
+        }
+
+
+        // Moves an icon along the polyline.
+        // Called when user hovers over a polyline on the map.
+        function animateIcon(line) {
+                lineAnimateActive = true;
+                var length = google.maps.geometry.spherical.computeLength(line.getPath());
+                var IntervalTime = 40;  // milliseconds.  Smaller the number, the smoother the animation
+                var intervals = length / IntervalTime;
+                var speedRatio = .4;  // The smaller the number, the longer the animation takes.
+
+                window.setTimeout(function() {
+                        if (lineAnimateCount > 100) {
+                                lineAnimateCount = 0;
+                        } else {
+                                lineAnimateCount += 100 / intervals * speedRatio;
+                        }
+//console.log(lineAnimateCount + " " + intervals);
+                        var icons = line.get('icons');
+                        if (icons.length > 0) {
+                                icons[0].offset = lineAnimateCount + '%';
+                                line.set('icons', icons);
+                        } else {
+
+                        }
+                        if (lineAnimateActive) {
+                                animateIcon(line);
+                        }
+                }, IntervalTime);
+        }
+
+
+        // Shows the closest bus stop at the location passed.
+        // An InfoWindow is created to display details about the stop and UofM bus routes passing through.
+    function showInfoWindow(map, location) {
+        var overlay;
+                overlay = new google.maps.OverlayView();
+                overlay.draw = function() {};
+                overlay.setMap(map);
+
+
+                var request = {
+                        location: location,
+                        types: ['bus_station'], //get bus stops and metro stations
+                        radius: 10,
+                };
+
+                // Use PlacesService to located the closest bus stop, within 30 feet.
+                placesService = new google.maps.places.PlacesService(map);
+                placesService.search(request, function(result, status, pagination) {
+                        station = result[0];
+
+                        if(typeof station != 'undefined'){
+                                pos = station.geometry['location']; //position
+                                stop_name = station.name;
+                                lat = station.geometry.location.lat();
+                                lng = station.geometry.location.lng();
+                                place_id = station.place_id;
+                                icon = station.icon;
+
+                                // Using the lat/lng, locate the closest stop in the GTFS feed.
+                                $.getJSON('closestStopData.php', { lat : lat, lng : lng}, function (data) {
+                                        if (data.distance < 30) {  // 30 feet distance from location
+
+                                                if (infoWindowActive) {
+                                                        infoWindowActive.close();
+                                                }
+                                                var infoWindowContent = "<div class='info-window'><div class='info-window-icon'><img width='30' src='" + icon + "'/></div><div class='info-window-name'><strong>" + data.stop.name + "</strong></div>";
+
+                                                infoWindowContent += "<table class='info-window-table'>";
+
+                                                var routes = data.routes;
+
+                                                for (var route_id in routes) {
+                                                        var bgColor = '#' + routes[route_id].color;
+                                                        var fontColorClass = (hexToLuma(bgColor) > .5) ? 'black' : 'white';
+
+                                                        infoWindowContent += "<tr><td style='background-color: " + bgColor + ";' class='info-window-table-route-name " + fontColorClass + "'>" + routes[route_id].short_name + "</td>";
+
+                                                        var times = routes[route_id].times;
+
+                                                        for  (var time in times) {
+                                                                infoWindowContent += "<td class='info-window-table-times'>" + times[time] + "</td>";
+                                                        }
+                                                        infoWindowContent += "</tr>";
+                                                }
+                                                infoWindowContent += "</table>";
+
+                                                infoWindowContent += '<a href="https://www.google.com/maps/place/?q=place_id:' + place_id + '">View on Google Maps</a>';
+
+                                                infoWindowContent += '</div>';
+
+                                                var infoWindow = new google.maps.InfoWindow({
+                                                        position: { lat : lat, lng : lng},
+                                                        content: infoWindowContent,
+
+                                                });
+
+                                                infoWindow.open(map);
+                                                infoWindowActive = infoWindow;
+
+                                                showStopRoutes(map, data.stop.id);
+                                        }
+                                });
+                        }
+                });
+   }
+
+   const hexToLuma = (colour) => {
+    const hex   = colour.replace(/#/, '');
+    const r     = parseInt(hex.substr(0, 2), 16);
+    const g     = parseInt(hex.substr(2, 2), 16);
+    const b     = parseInt(hex.substr(4, 2), 16);
+
+    return [
+        0.299 * r,
+        0.587 * g,
+        0.114 * b
+    ].reduce((a, b) => a + b) / 255;
+};
+    </script>
+
+
+</body>
+</html>
